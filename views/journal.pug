@@ -2,14 +2,30 @@ extends layout
 
 block content
 	include ./menu.pug
+	form(action='/entries' method='post')
+		label(for='mood'): b Mood:
+		input(type='text' name='mood')
+
+		label(for='entry'): b entry:
+		input(type='text' name='entry')
+		button(type='submit') Post Entry
+
+	form(action='/journal' method='refresh')
+		button(type='submit') Refresh entries
+
 	table.table.table-striped
 		tr
 		th Date
 		th Mood
 		th Entry
+		th Update
+		th Delete
 
 		each e in entries
 			tr
 			td= e.date
 			td= e.mood
 			td= e.entry 
+			td: a(href=`/journal/${e._id}/edit`) Update
+			td: form(method='POST' action=`entries/${e._id}?_method=DELETE`)
+					button(type='submit') Delete

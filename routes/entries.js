@@ -59,7 +59,7 @@ const entrySchema = new Schema({
 	},
 	location: {
 		type: pointSchema,
-		required: true
+		required: false
 	},
 	weather: String
 });
@@ -70,6 +70,7 @@ const Entry = mongoose.model('Entry', entrySchema);
 
 /* GET full entry listing for logged in user. */
 router.get('/', checkAuth, async function(req, res, next) {
+	console.log("I'm here?")
 	var entries = await Entry.find({ userId: req.user._id });
 	res.status(200);
 	res.json(entries);
@@ -84,6 +85,7 @@ router.get('/:entryId', checkAuth, async function(req, res, next){
 		_id : req.params.entryId
 	});
 	if(entry.userId == req.user._id || req.user.admin == true){
+		console.log(entry)
 		res.json(entry);
 	} else {
 		var error = new Error("Not found.");
@@ -96,37 +98,42 @@ router.get('/:entryId', checkAuth, async function(req, res, next){
  * Allow logged in user to create new entry.
  */
 router.post('/', checkAuth, async function(req, res, next){
-	if(!(req.body.entry && req.body.mood && req.body.location)){
+	if(!(req.body.entry && req.body.mood)){
 		var error = new Error('Missing required information.');
 		error.status = 400;
 		throw error;
 	}
+	console.log(req.user)
+	//console.log(req)
 	var entry = new Entry({
+		
 		userId: req.user._id,
 		entry: req.body.entry,
 		mood: req.body.mood,
-		location: req.body.location
+		//location: req.body.location
 	});
 	entry.save();
-	res.status(200).send("Entry saved.");
+	res.status(200).redirect('/journal')
 });
 
 /**
  * Allow a user to modify their own entry.
  */
 router.put('/:entryId', checkAuth, async function(req, res, next){
+	console.log("Inside put. Session User")
+	console.log(req.user)
 	var entry = await Entry.findOne({
 		userId : req.user._id,
 		_id : req.params.entryId
 	});
-
+	
 	if(!entry){
 		var error = new Error('Entry not found.');
 		error.status = 404;
 		throw error;
 	}
 
-	if(!(req.body.entry && req.body.mood && req.body.location && req.body.weather)){
+	if(!(req.body.entry && req.body.mood)){
 		console.log(req.body);
 		var error = new Error('Missing required information.');
 		error.status = 400;
@@ -138,15 +145,15 @@ router.put('/:entryId', checkAuth, async function(req, res, next){
 	entry.location = req.body.location;
 	entry.weather = req.body.weather;
 	entry.save();
-	res.status(200).send('Entry saved.');
+	res.status(200).redirect('/journal');
 });
 
 /**
  * Allow a user to delete one of their own entries.
  */
 router.delete('/:entryId', checkAuth, async function(req, res,next){
-	const entry = Entry.deleteOne({
-		userId : req.users._id,
+	var entry = await Entry.findOneAndDelete({
+		userId : req.user._id,
 		_id : req.params.entryId
 	});
 
@@ -154,6 +161,8 @@ router.delete('/:entryId', checkAuth, async function(req, res,next){
 		res.status(404).send("Not found.");
 		next();
 	}
+	//entry.save();
+	res.status(200).redirect('/journal')
 });
 
 module.exports = { router, Entry };

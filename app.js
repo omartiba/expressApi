@@ -20,7 +20,7 @@ var winston = require('winston');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var session = require('express-session');
-
+var methodOverride = require('method-override')
 
 /**********
  * Setup the logger.
@@ -50,7 +50,7 @@ if(process.env.NODE_ENV !== 'production'){
  * Notice that using +srv on the protocol causes the 
  * connection to use ssl by default.
  **********/
-const uri = 'mongodb+srv://mrwoodring:BadPassword@cluster0.dxk6b.mongodb.net/Journaler?retryWrites=true&w=majority'
+const uri = 'mongodb+srv://mrwoodring:toomanysecrets@cluster0.xkoeo.mongodb.net/myData?retryWrites=true&w=majority'
 mongoose.connect(uri).
 	catch( error => 
 		{ 
@@ -108,6 +108,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(methodOverride('_method'))
 
 // Ensure the user object (if there is one logged in)
 // is available as a local var so templates can use it.

@@ -61,8 +61,11 @@ const User = mongoose.model('User', userSchema);
  */
 const validPassword = function(password, salt, hash){
 	let key = pbkdf2.pbkdf2Sync(password, salt, 1, 32, 'sha512');
-
+	//console.log(key)
+	//console.log(salt)
+	//console.log(password)
 	if(key.toString('hex') != hash){
+		console.log(hash)
 		return false;
 	}
 	return true;
@@ -75,7 +78,7 @@ const validPassword = function(password, salt, hash){
  */
 passport.use(new Strategy(
 	function(username, password, done) {
-	  User.findOne({ username: username }, function (err, user) {
+	  User.findOne({ email: username }, function (err, user) {
 		  // Can't connect to Db?  We're done.
 		if (err) {
 			return done(err);
@@ -100,6 +103,7 @@ passport.use(new Strategy(
 // I don't want to type this passport.authenticate, blah, blah line
 // every time, so I'm aliasing it.
 const checkAuth = passport.authenticate('basic', { session: false });
+
 
 /**
  * Routes
@@ -141,7 +145,7 @@ router.get('/:userId', checkAuth, async function(req, res, next){
  * Only administrators can add new users.
  */
 router.post('/', checkAuth, async function(req, res, next){
-	console.log(req.body);
+	//console.log(req.body);
 	if(req.user.admin){
 		var newUser = User();
 		newUser.email = req.body.username;
@@ -150,12 +154,52 @@ router.post('/', checkAuth, async function(req, res, next){
 		newUser.password = pbkdf2.pbkdf2Sync(req.body.password, newUser.salt, 1, 32, 'sha512').toString('hex');
 		newUser.admin = false;
 		newUser.save();
-		res.send(200);
+		res.status(200).redirect('/');
         } else {
 		var error = new Error("Not authorized.");
 		error.status = 401;
 		throw error;
         }
+});
+
+router.put('/:userId', checkAuth, async function(req, res, next){
+	//console.log(req)
+	var currentUser =  await User.findOne({
+		_id : req.params.userId
+	});
+
+	console.log('Current User having password changed')
+	console.log(currentUser)
+
+	if(!currentUser){
+		var error = new Error('User not found');
+		error.status = 404;
+		throw error;
+	}
+
+	currentUser.salt = crypto.randomBytes(32).toString('hex');
+	currentUser.password = pbkdf2.pbkdf2Sync(req.body.password, currentUser.salt, 1, 32, 'sha512').toString('hex')
+	currentUser.save();
+	res.status(200).redirect('/myAccount');
+});
+
+router.delete('/:userId', checkAuth, async function(req, res, next){
+
+	var deleteUser = await User.findByIdAndDelete({
+		_id: req.params.userId
+	});
+
+	if(!deleteUser){
+		res.status(404).send("User not found")
+		next();
+	}
+	console.log(req.user)
+	console.log(deleteUser)
+	if(req.user.admin && deleteUser.admin){
+		res.status(200).redirect('/logout');
+	} else {
+		res.status(200).redirect('/myAccount')
+	}
 });
 
 module.exports = { checkAuth, router, User, validPassword };

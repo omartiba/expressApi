@@ -3,3 +3,10 @@ extends layout
 block content
 	include ./menu.pug
 	h1 Add a New User
+	form(action='/users' method='post')
+		label(for='username'): b Username:
+		input(type='text' name='username')
+		
+		label(for='password'): b Password:
+		input(type='password' name='password')
+		button(type='submit') Create New User

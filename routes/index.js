@@ -9,7 +9,10 @@ var validPassword = require('./users.js').validPassword;
 
 passport.use(new LocalStrategy(
   function(username, password, done){ 
-    User.findOne({username: username }, function(err, user){
+    //console.log(username)
+    //console.log(password)
+    User.findOne({email: username }, function(err, user){
+      //console.log(user)
       if(err) { return done(err); }
       if(!user) { return done(null, false); }
       if(!validPassword(password, user.salt, user.password)){ return done(null, false); }
@@ -23,6 +26,7 @@ var checkAuthLocal = passport.authenticate('local', { failureRedirect: '/', sess
 /* GET home page. */
 router.get('/', function(req, res, next) {
     var name;
+   // console.log(req.user)
   if(req.user){
     var name = req.user.email;
   }
@@ -34,10 +38,13 @@ router.get('/about', function(req, res, next){
 });
 
 router.post('/login', checkAuthLocal, function(req, res, next){
+  console.log("Current logged in user")
+  console.log(req.user)
   res.redirect('/');
 });
 
-router.get('/addUser', checkAuthLocal, function(req, res, next){
+router.get('/addUser', function(req, res){
+  //console.log(req.user.admin)
   if(req.user.admin){
 	res.render('addUser');
   } else {
@@ -46,17 +53,61 @@ router.get('/addUser', checkAuthLocal, function(req, res, next){
 });
 
 router.get('/logout', function(req, res){
-	req.logout();
-	res.redirect('/');
+  req.logout();
+
+  res.redirect('/'); 
 });
 
 router.get('/journal', async function(req, res){
 	if(!req.isAuthenticated()){
 		res.redirect('/');
 	} else {
+    console.log("inside the journal get index")
+    console.log(req.user)
 		var entries = await Entry.find({ userId : req.user._id });
 		res.render('journal', { entries : entries } );
 	}
+});
+
+router.get('/journal/:entryId/edit', async function(req, res){
+  if(!req.isAuthenticated()){
+    res.redirect('journal');
+  }
+  else{
+    var entry = await Entry.findOne({
+      userId : req.user._id,
+      _id : req.params.entryId
+    });
+    console.log("In index journal get")
+    console.log(entry)
+    res.render('edit', {entry: entry});
+  }
+});
+
+router.get('/myAccount', async function(req, res){
+  if(req.user.admin){
+    var allUsers = await User.find({})
+    res.render('admin', {allUsers, allUsers});
+  }
+  else{
+    res.render('myAccount');
+  }
+});
+
+router.get('/myAccount/:userId/edit', async function(req, res){
+  if(!req.isAuthenticated()){
+    res.redirect('/');
+  }
+  else{
+    console.log("params")
+    console.log(req.params)
+    var currentUser = await User.findById({
+      _id : req.params.userId
+    });
+    console.log("User being passed")
+    console.log(currentUser)
+    res.render('changePassword', {currentUser: currentUser});
+  }
 });
 
 module.exports = router;

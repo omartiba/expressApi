@@ -1,0 +1,17 @@
+extends layout 
+
+block content 
+    include ./menu.pug 
+    
+    table.table.table-striped 
+        tr 
+        th Users 
+        th Update 
+        th Delete 
+
+        each u in allUsers 
+            tr 
+            td= u.email 
+            td: a(href=`/myAccount/${u._id}/edit`) Change Password
+            td: form(method='POST' action=`/users/${u._id}?_method=DELETE`)
+                    button(type='submit') Delete Account 

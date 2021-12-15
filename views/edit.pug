@@ -1,0 +1,11 @@
+extends layout
+
+block content
+    include ./menu.pug
+    form(method='POST' action=`/entries/${entry._id}?_method=PUT`)
+        label(for='mood'): b Mood:
+        input(type='text' name='mood')
+
+        label(for='entry'): b entry:
+        input(type='text' name='entry')
+        button(type='submit') Update

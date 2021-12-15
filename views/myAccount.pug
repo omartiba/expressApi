@@ -1,0 +1,12 @@
+extends layout 
+
+block content   
+    include ./menu.pug 
+    if user != null    
+        h1 Welcome to your Account settings  #{user.email}
+    else    
+        include ./login.pug 
+
+    a(href=`/myAccount/${user._id}/edit`) Change Password
+    form(method='POST' action=`/users/${user._id}?_method=DELETE`)
+        button(type='submit') Delete Account 
